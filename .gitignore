@@ -1,26 +1,21 @@
-# Python bytecode & cache
 __pycache__/
 *.py[cod]
 *$py.class
 
-# Environments
 venv/
 .venv/
 env/
 ENV/
 
-# Data & Model Checkpoints (avoid pushing massive binaries)
 *.bin
 *.pt
 *.safetensors
 *.ckpt
 data/*.json
 
-# Logs & System Files
 *.log
 .DS_Store
 .idea/
 .vscode/
 
-# Environment Variables & Credentials
-.env
+.env

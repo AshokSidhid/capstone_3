@@ -5,11 +5,6 @@ from transformers import AutoTokenizer
 from typing import List, Dict, Any, Tuple
 
 class UNLPManipulationDataset(Dataset):
-    """
-    Dataset loader for Ukrainian Telegram Post Manipulation Technique Classification 
-    and Text-Span Evidence Extraction.
-    Handles multi-label classification target mapping and token-level span labeling.
-    """
     def __init__(
         self, 
         data_path: str, 
@@ -38,10 +33,7 @@ class UNLPManipulationDataset(Dataset):
         spans: List[Dict[str, int]], 
         offset_mapping: List[Tuple[int, int]]
     ) -> List[int]:
-        """
-        Maps character-level text span start/end offsets to sub-word token positions.
-        """
-        bio_labels = [0] * len(offset_mapping)  # 0: Outside evidence span, 1: Inside span
+        bio_labels = [0] * len(offset_mapping)
         
         for span in spans:
             start_char = span["start"]
@@ -49,9 +41,8 @@ class UNLPManipulationDataset(Dataset):
             
             for token_idx, (token_start, token_end) in enumerate(offset_mapping):
                 if token_start == 0 and token_end == 0:
-                    continue  # Skip special tokens ([CLS], [SEP], [PAD])
+                    continue
                 
-                # Check if token falls within the character span offset
                 if token_start >= start_char and token_end <= end_char:
                     bio_labels[token_idx] = 1
 
@@ -61,13 +52,11 @@ class UNLPManipulationDataset(Dataset):
         item = self.data[idx]
         text = item["text"]
         
-        # Multi-Label Binary Vector Construction
         multi_label_vec = [0.0] * len(self.label_list)
         for technique in item.get("techniques", []):
             if technique in self.label2id:
                 multi_label_vec[self.label2id[technique]] = 1.0
 
-        # Tokenize text with offset mapping for character-to-token span alignment
         encoding = self.tokenizer(
             text,
             truncation=True,
@@ -89,4 +78,4 @@ class UNLPManipulationDataset(Dataset):
             "attention_mask": encoding["attention_mask"].squeeze(0),
             "multi_label_targets": torch.tensor(multi_label_vec, dtype=torch.float),
             "span_targets": torch.tensor(span_labels, dtype=torch.long)
-        }
+        }

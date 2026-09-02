@@ -4,10 +4,6 @@ import numpy as np
 from typing import Dict, Any, Tuple
 
 class TemperatureScaler(nn.Module):
-    """
-    Post-hoc Temperature Scaling to calibrate model confidence probabilities.
-    Optimizes a single scalar parameter (T) on validation sets to minimize ECE.
-    """
     def __init__(self):
         super(TemperatureScaler, self).__init__()
         self.temperature = nn.Parameter(torch.ones(1) * 1.5)
@@ -16,10 +12,6 @@ class TemperatureScaler(nn.Module):
         return logits / self.temperature
 
 class ConfidenceCalibrationEngine:
-    """
-    Calculates Expected Calibration Error (ECE) and provides operational 
-    Abstention Guardrails for low-confidence model predictions.
-    """
     def __init__(
         self, 
         confidence_threshold: float = 0.65, 
@@ -30,10 +22,6 @@ class ConfidenceCalibrationEngine:
         self.scaler = TemperatureScaler()
 
     def calculate_ece(self, probs: np.ndarray, labels: np.ndarray) -> float:
-        """
-        Computes Expected Calibration Error (ECE) across probability confidence bins.
-        Target requirement: ECE <= 0.08.
-        """
         bin_boundaries = np.linspace(0, 1, self.ece_bins + 1)
         ece = 0.0
         total_samples = len(probs)
@@ -42,7 +30,6 @@ class ConfidenceCalibrationEngine:
             bin_lower = bin_boundaries[i]
             bin_upper = bin_boundaries[i + 1]
             
-            # Mask samples belonging to current bin boundary
             in_bin = (probs > bin_lower) & (probs <= bin_upper)
             prop_in_bin = np.mean(in_bin)
             
@@ -58,11 +45,6 @@ class ConfidenceCalibrationEngine:
         cls_logits: torch.Tensor, 
         label_names: list
     ) -> Dict[str, Any]:
-        """
-        Applies temperature calibration and evaluates confidence.
-        If maximum confidence < threshold, triggers ABSTAIN status for analyst review.
-        """
-        # Apply temperature scaling calibration
         calibrated_logits = self.scaler(cls_logits)
         probs = torch.sigmoid(calibrated_logits).detach().cpu().numpy().squeeze(0)
         
@@ -79,7 +61,6 @@ class ConfidenceCalibrationEngine:
             if prob >= 0.5:
                 flagged_techniques.append(label)
 
-        # Abstention Decision Logic
         requires_analyst_review = max_confidence < self.confidence_threshold
         status = "ABSTAIN_FLAGGED_FOR_REVIEW" if requires_analyst_review else "VERIFIED_AUTOMATED"
 
@@ -89,4 +70,4 @@ class ConfidenceCalibrationEngine:
             "requires_human_adjudication": requires_analyst_review,
             "detected_techniques": flagged_techniques,
             "class_probabilities": predictions
-        }
+        }

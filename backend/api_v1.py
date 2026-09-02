@@ -4,7 +4,6 @@ from typing import List, Dict, Any, Optional
 import torch
 import numpy as np
 
-# Import custom core modules built in previous steps
 from models.joint_model import JointManipulationSpanModel
 from backend.calibration import ConfidenceCalibrationEngine
 
@@ -14,7 +13,6 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# Global model and calibration initialization
 MODEL_NAME = "xlm-roberta-base"
 LABELS = [
     "Appeal_to_Authority", "Bandwagon", "Causal_Oversimplification", 
@@ -28,7 +26,6 @@ model.eval()
 
 calibration_engine = ConfidenceCalibrationEngine(confidence_threshold=0.65)
 
-# Pydantic Schemas
 class PostAnalysisRequest(BaseModel):
     post_id: str = Field(..., example="tg_post_10482")
     channel_id: str = Field(..., example="channel_ukr_news")
@@ -58,22 +55,17 @@ async def analyze_telegram_post(payload: PostAnalysisRequest):
         raise HTTPException(status_code=400, detail="Text payload cannot be empty.")
     
     try:
-        # Mock tokenization & inference forward pass (In production: use dataset_loader tokenizer)
-        # Assuming dummy tensor input for API verification structure
         dummy_input_ids = torch.randint(0, 1000, (1, 128)).to(device)
         dummy_mask = torch.ones((1, 128)).to(device)
 
         with torch.no_grad():
             cls_logits, span_logits = model(dummy_input_ids, dummy_mask)
 
-        # Apply calibration and abstention check (Objective O3)
         calibration_result = calibration_engine.evaluate_with_abstention(cls_logits, LABELS)
 
-        # Process token span outputs into character-level evidence spans
         span_probs = torch.softmax(span_logits, dim=-1)[0, :, 1].cpu().numpy()
         active_spans = []
         
-        # Simple threshold extraction for demo span alignment
         if np.max(span_probs) > 0.5:
             active_spans.append(SpanEvidence(
                 text_segment=payload.text[:25],
@@ -92,4 +84,4 @@ async def analyze_telegram_post(payload: PostAnalysisRequest):
         )
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Inference error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Inference error: {str(e)}")
