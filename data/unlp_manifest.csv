@@ -1,0 +1,7 @@
+post_id,channel_id,timestamp,text_char_length,technique_count,has_evidence_spans,partition_split,is_heldout_negative_test
+tg_post_0001,channel_news_ua,2025-02-10T14:32:00Z,342,2,TRUE,train,FALSE
+tg_post_0002,channel_pol_today,2025-02-10T15:04:12Z,185,1,TRUE,train,FALSE
+tg_post_0003,channel_east_analytics,2025-02-11T09:12:45Z,512,0,FALSE,val,FALSE
+tg_post_0004,channel_news_ua,2025-02-12T11:20:00Z,290,3,TRUE,train,FALSE
+tg_post_0005,channel_heldout_alpha,2025-03-01T08:00:00Z,410,1,TRUE,test_temporal,TRUE
+tg_post_0006,channel_heldout_beta,2025-03-02T10:15:30Z,620,4,TRUE,test_channel,TRUE
