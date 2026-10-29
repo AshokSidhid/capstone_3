@@ -27,32 +27,17 @@ class BinaryFocalLoss(nn.Module):
         return loss
 
 class MultiTaskUncertaintyLoss(nn.Module):
-    def __init__(self, alpha: float = 0.25, gamma: float = 2.0):
-        super(MultiTaskUncertaintyLoss, self).__init__()
-        self.focal_loss = BinaryFocalLoss(alpha=alpha, gamma=gamma)
-        self.span_loss_fn = nn.CrossEntropyLoss(ignore_index=-100)
-        
-        self.log_var_cls = nn.Parameter(torch.zeros(1))
-        self.log_var_span = nn.Parameter(torch.zeros(1))
+    def __init__(self, num_tasks=2):
+        super().__init__()
+        # Learnable log variances log(sigma^2) for each task
+        self.log_vars = nn.Parameter(torch.zeros(num_tasks))
 
-    def forward(
-        self, 
-        cls_logits: torch.Tensor, 
-        cls_targets: torch.Tensor, 
-        span_logits: torch.Tensor, 
-        span_targets: torch.Tensor
-    ) -> torch.Tensor:
-        l_cls = self.focal_loss(cls_logits, cls_targets)
+    def forward(self, loss_cls, loss_span):
+        # Homoscedastic uncertainty loss formulation:
+        # L_total = exp(-log_var_1) * loss_1 + log_var_1 + exp(-log_var_2) * loss_2 + log_var_2
+        precision_cls = torch.exp(-self.log_vars[0])
+        precision_span = torch.exp(-self.log_vars[1])
         
-        span_logits_flat = span_logits.view(-1, 2)
-        span_targets_flat = span_targets.view(-1)
-        l_span = self.span_loss_fn(span_logits_flat, span_targets_flat)
-        
-        precision_cls = torch.exp(-self.log_var_cls)
-        precision_span = torch.exp(-self.log_var_span)
-        
-        total_loss = (
-            precision_cls * l_cls + self.log_var_cls +
-            precision_span * l_span + self.log_var_span
-        )
-        return total_loss
+        total_loss = (precision_cls * loss_cls + self.log_vars[0]) + \
+                     (precision_span * loss_span + self.log_vars[1])
+        return total_loss

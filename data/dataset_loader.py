@@ -78,4 +78,4 @@ class UNLPManipulationDataset(Dataset):
             "attention_mask": encoding["attention_mask"].squeeze(0),
             "multi_label_targets": torch.tensor(multi_label_vec, dtype=torch.float),
             "span_targets": torch.tensor(span_labels, dtype=torch.long)
-        }
+        }
